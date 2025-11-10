@@ -1,32 +1,37 @@
-#name:		  	all2points
-#created:		October 2023
-#by:			paul.kennedy@guardiangeomatics.com
-#description:   python module to read a Kongsberg ALL file, create a point cloud
+# name:		  	all2points
+# created:		October 2023
+# by:			paul.kennedy@guardiangeomatics.com
+# description:  python module to read a Kongsberg ALL file, create a point cloud
+# Follow-up:	Julian Valdez - clean up and adapt to pyall structure
 
-#done##########################################
-
-#todo##########################################
 
 import os.path
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
-import math
-import numpy as np
-# import open3d as o3d
 import sys
 import time
-import rasterio
+
+import math
+import numpy as np
 import multiprocessing as mp
-import shapefile
 import logging
 
-import pyall
-import fileutils
-import geodetic
-import multiprocesshelper 
-import cloud2tif
-import lashelper
-import ggmbesstandard
+# pyall modules
+from . import pyall
+from . import fileutils
+from . import geodetic
+from . import multiprocesshelper
+from . import cloud2tif
+from . import ggmbesstandard
+
+# Optional imports
+# import open3d as o3d
+try:
+	import shapefile
+	import rasterio
+except ImportError:
+	print("Optional modules shapefile and rasterio not found. Some functionality may be limited.")
+	pass
 
 ###########################################################################
 def main():
@@ -47,8 +52,13 @@ def main():
 
 	matches = []
 	args = parser.parse_args()
-	# args.inputfolder = "C:/sampledata/all/B_S2980_3005_20220220_084910.all"
-	args.inputfolder = r"C:\sampledata\all\ncei_order_2023-10-09T06_31_19.276Z\multibeam-item-517619\insitu_ocean\trackline\atlantis\at26-15\multibeam\data\version1\MB\em122\0000_20140521_235308_Atlantis.all.mb58\0000_20140521_235308_Atlantis.all" 
+	
+	# for debugging
+	# Define input folder here
+	args.inputfolder = "/home/julianvaldez/projects/OI.AI.AUVProcessing/data/input_all"
+	args.cpu = '1'
+	# TODO: determine correct epsg for the data and compare when no espg is specified
+	# args.epsg = "26910"
 
 	args.spherical = False
 	args.tvu = True

@@ -6,7 +6,7 @@ from rasterio.transform import from_origin
 from rasterio.transform import Affine
 import numpy as np
 
-import geodetic
+from . import geodetic
 import logging
 import gc
 from itertools import product
@@ -18,7 +18,7 @@ from rasterio import windows
 from scipy.signal import medfilt
 from scipy.signal import medfilt2d
 
-import fileutils
+from . import fileutils
 
 ###############################################################################
 def getsize(filename):

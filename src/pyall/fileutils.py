@@ -4,8 +4,11 @@ import fnmatch
 from glob import glob
 import shutil
 
-from ctypes import Structure, c_int32, c_uint64, sizeof, byref, windll
+from ctypes import Structure, c_int32, c_uint64, sizeof, byref
 
+# from ctypes import windll	# Uncomment if you need to use windll for Windows-specific calls
+# from ctypes import byref	# Uncomment if you need to use byref for Windows-specific calls
+ 
 class MemoryStatusEx(Structure):
     _fields_ = [
         ('length', c_int32),

@@ -7,6 +7,7 @@
 
 # See readme.md for more details
 
+
 import sys
 import math
 import pprint
@@ -17,10 +18,12 @@ from datetime import datetime
 from datetime import timedelta
 import numpy as np
 
-import geodetic
+# pyall modules
+from . import geodetic
 import logging
-import timeseries
-import ggmbes
+from . import timeseries
+from . import ggmbes
+from .datamodel import NavigationRecord, BeamXYZ88, XYZ88Datagram, PointCloud
 ###############################################################################
 def main():
     # open the ALL file for reading by creating a new allreader class and passin in the filename to open.
@@ -291,6 +294,18 @@ class Cpointcloud:
         self.idarr.extend(nid)
         # self.idarr.extend(npid)
 
+    ###############################################################################
+    def to_datamodel(self):
+        """Return the point cloud data packaged as a :class:`PointCloud` dataclass."""
+
+        return PointCloud(
+            eastings=np.asarray(self.xarr, dtype=float),
+            northings=np.asarray(self.yarr, dtype=float),
+            depths=np.asarray(self.zarr, dtype=float),
+            quality=np.asarray(self.qarr, dtype=float),
+            ids=np.asarray(self.idarr, dtype=float),
+        )
+
 
 ###############################################################################
 class allreader:
@@ -552,8 +567,8 @@ class allreader:
         return initialdepthmode
 ###############################################################################
 
-    def loadnavigation(self, firstrecordonly=False):
-        '''loads all the navigation into lists'''
+    def loadnavigation(self, firstrecordonly=False, as_records=False):
+        '''loads all the navigation into lists or dataclass records'''
         navigation = []
         selectedpositioningsystem = None
         self.rewind()
@@ -566,8 +581,27 @@ class allreader:
                     selectedpositioningsystem = datagram.descriptor
                 if (selectedpositioningsystem == datagram.descriptor):
                     # for python 2.7
-                    navigation.append(
-                        [to_timestamp(recDate), datagram.latitude, datagram.longitude])
+                    timestamp_unix = to_timestamp(recDate)
+                    if as_records:
+                        navigation.append(
+                            NavigationRecord(
+                                timestamp=recDate,
+                                timestamp_unix=timestamp_unix,
+                                latitude=datagram.latitude,
+                                longitude=datagram.longitude,
+                                quality=datagram.Quality,
+                                speed_over_ground=datagram.SpeedOverGround,
+                                course_over_ground=datagram.CourseOverGround,
+                                heading=datagram.heading,
+                                descriptor=datagram.descriptor,
+                                counter=datagram.counter,
+                                serial_number=datagram.serialnumber,
+                                raw_payload=datagram.data,
+                            )
+                        )
+                    else:
+                        navigation.append(
+                            [timestamp_unix, datagram.latitude, datagram.longitude])
                     # for python 3.4
                     # navigation.append([recDate.timestamp(), datagram.latitude, datagram.longitude])
 
@@ -2156,6 +2190,53 @@ class X_depth:
         fulldatagram = fulldatagram + footer
 
         return fulldatagram
+
+    ###############################################################################
+    def to_datamodel(self):
+        """Return a :class:`XYZ88Datagram` populated with the decoded beam data."""
+
+        if not hasattr(self, "depth"):
+            raise ValueError("call read() before requesting a datamodel representation")
+
+        beams = [
+            BeamXYZ88(
+                depth=self.depth[i],
+                across_track=self.acrosstrackdistance[i],
+                along_track=self.alongtrackdistance[i],
+                detection_window_length=self.detectionwindowslength[i],
+                quality_factor=self.qualityfactor[i],
+                beam_incidence_angle_adjustment=self.beamincidenceangleadjustment[i],
+                detection_information=self.detectioninformation[i],
+                realtime_cleaning_information=self.realtimecleaninginformation[i],
+                reflectivity=self.reflectivity[i],
+            )
+            for i in range(self.nbeams)
+        ]
+
+        timestamp = getattr(self, "timestamp", None)
+        latitude = getattr(self, "latitude", None)
+        longitude = getattr(self, "longitude", None)
+
+        return XYZ88Datagram(
+            record_date=self.recorddate,
+            time_seconds=self.time,
+            counter=self.counter,
+            serial_number=self.serialnumber,
+            heading=self.heading,
+            sound_speed_at_transducer=self.soundspeedattransducer,
+            transducer_depth=self.transducerdepth,
+            n_beams=self.nbeams,
+            n_valid_detections=self.nvaliddetections,
+            sample_frequency=self.samplefrequency,
+            scanning_info=self.scanninginfo,
+            spare_fields=(self.spare1, self.spare2, self.spare3),
+            beams=beams,
+            timestamp=timestamp,
+            latitude=latitude,
+            longitude=longitude,
+            etx=getattr(self, "etx", None),
+            checksum=getattr(self, "checksum", None),
+        )
 
 ###############################################################################
 class Y_SEABEDIMAGE:

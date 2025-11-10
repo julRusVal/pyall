@@ -8,6 +8,25 @@ pyall
 * based on ALL file version October 2013 
 * developed for Python version 3.4 
 
+Installation
+------------
+The project now follows a standard ``src``-based layout, so it can be installed
+like any other modern Python package.  With [uv](https://docs.astral.sh/uv/)
+you can run either of the following commands from the repository root:
+
+```
+uv pip install .
+# or, for local development
+uv pip install -e .
+```
+
+Optional functionality pulls in heavier dependencies.  Install the relevant
+extras when you need them, e.g. ``uv pip install .[raster]`` for raster export
+support or ``uv pip install .[shapefile]`` for shapefile helpers.
+
+After installation, the `pyall-all2points` console script is available; run
+``pyall-all2points --help`` to see the current options.
+
 Done
 ====
 * Added A_Attitude decode
